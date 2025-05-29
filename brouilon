@@ -1,24 +1,66 @@
-hamat@mahamat:~$ ros2 launch in425_nav navigation_launch.py
-[INFO] [launch]: All log files can be found below /home/mahamat/.ros/log/2025-05-29-17-50-35-525182-mahamat-4755
+[INFO] [launch]: All log files can be found below /home/mahamat/.ros/log/2025-05-29-17-57-12-961070-mahamat-6278
 [INFO] [launch]: Default logging verbosity is set to INFO
-[INFO] [rrt_node.py-1]: process started with pid [4762]
-[INFO] [motion_node.py-2]: process started with pid [4764]
-[motion_node.py-2] Traceback (most recent call last):
-[motion_node.py-2]   File "/home/mahamat/ros2_ws/install/in425_nav/lib/in425_nav/motion_node.py", line 11, in <module>
-[motion_node.py-2]     load_entry_point('in425-nav', 'console_scripts', 'motion_node.py')()
-[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 490, in load_entry_point
-[motion_node.py-2]     return get_distribution(dist).load_entry_point(group, name)
-[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 2854, in load_entry_point
-[motion_node.py-2]     return ep.load()
-[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 2445, in load
-[motion_node.py-2]     return self.resolve()
-[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 2451, in resolve
-[motion_node.py-2]     module = __import__(self.module_name, fromlist=['__name__'], level=0)
-[motion_node.py-2]   File "/home/mahamat/ros2_ws/build/in425_nav/in425_nav/motion_node.py", line 7, in <module>
-[motion_node.py-2]     from tf2_ros.transform_exception import TransformException
-[motion_node.py-2] ModuleNotFoundError: No module named 'tf2_ros.transform_exception'
-[ERROR] [motion_node.py-2]: process has died [pid 4764, exit code 1, cmd '/home/mahamat/ros2_ws/install/in425_nav/lib/in425_nav/motion_node.py --ros-args'].
-[rrt_node.py-1] [INFO] [1748541036.856505092] [rrt_node]: Map loaded !
-[rrt_node.py-1] [INFO] [1748541074.346226901] [rrt_node]: Goal set at: (49, 171)
-^C[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
-[INFO] [rrt_node.py-1]: process has finished cleanly [pid 4762]
+[INFO] [killall-1]: process started with pid [6280]
+[INFO] [map_server-2]: process started with pid [6282]
+[INFO] [rviz2-3]: process started with pid [6284]
+[INFO] [static_transform_publisher-4]: process started with pid [6286]
+[killall-1] gzserver: no process found
+[killall-1] gzclient: no process found
+[ERROR] [killall-1]: process has died [pid 6280, exit code 1, cmd 'killall gzserver gzclient'].
+[static_transform_publisher-4] [INFO] [1748541433.219865016] [static_transform_publisher_TS0tj9jrlhdrlTVH]: Spinning until killed publishing transform from 'map' to 'odom'
+[map_server-2] [INFO] [1748541433.250396959] [map_server]: 
+[map_server-2] 	map_server lifecycle node launched. 
+[map_server-2] 	Waiting on external lifecycle transitions to activate
+[map_server-2] 	See https://design.ros2.org/articles/node_lifecycle.html for more information.
+[map_server-2] [INFO] [1748541433.250465460] [map_server]: Creating
+[INFO] [gzserver-5]: process started with pid [6323]
+[INFO] [gzclient   -6]: process started with pid [6325]
+[rviz2-3] [INFO] [1748541433.966735257] [rviz2]: Stereo is NOT SUPPORTED
+[rviz2-3] [INFO] [1748541433.966790757] [rviz2]: OpenGl version: 3.1 (GLSL 1.4)
+[rviz2-3] [INFO] [1748541434.020806759] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [robot_state_publisher-7]: process started with pid [6413]
+[INFO] [spawn_entity.py-8]: process started with pid [6415]
+[INFO] [ros2-9]: process started with pid [6417]
+[robot_state_publisher-7] Link base_link had 4 children
+[robot_state_publisher-7] Link front_wheel had 0 children
+[robot_state_publisher-7] Link left_wheel had 0 children
+[robot_state_publisher-7] Link lidar_link had 0 children
+[robot_state_publisher-7] Link right_wheel had 0 children
+[robot_state_publisher-7] [INFO] [1748541438.293094640] [robot_state_publisher]: got segment base_footprint
+[robot_state_publisher-7] [INFO] [1748541438.293160849] [robot_state_publisher]: got segment base_link
+[robot_state_publisher-7] [INFO] [1748541438.293172224] [robot_state_publisher]: got segment front_wheel
+[robot_state_publisher-7] [INFO] [1748541438.293177016] [robot_state_publisher]: got segment left_wheel
+[robot_state_publisher-7] [INFO] [1748541438.293180057] [robot_state_publisher]: got segment lidar_link
+[robot_state_publisher-7] [INFO] [1748541438.293182974] [robot_state_publisher]: got segment right_wheel
+[map_server-2] [INFO] [1748541438.585200880] [map_server]: Configuring
+[map_server-2] [INFO] [map_io]: Loading yaml file: /home/mahamat/ros2_ws/install/in425_simu/share/in425_simu/maps/my_map.yaml
+[map_server-2] [DEBUG] [map_io]: resolution: 0.05
+[map_server-2] [DEBUG] [map_io]: origin[0]: -10.1
+[map_server-2] [DEBUG] [map_io]: origin[1]: -9.89
+[map_server-2] [DEBUG] [map_io]: origin[2]: 0
+[map_server-2] [DEBUG] [map_io]: free_thresh: 0.196
+[map_server-2] [DEBUG] [map_io]: occupied_thresh: 0.65
+[map_server-2] [DEBUG] [map_io]: mode: trinary
+[map_server-2] [DEBUG] [map_io]: negate: 0
+[map_server-2] [INFO] [map_io]: Loading image_file: /home/mahamat/ros2_ws/install/in425_simu/share/in425_simu/maps/my_map.pgm
+[map_server-2] [DEBUG] [map_io]: Read map /home/mahamat/ros2_ws/install/in425_simu/share/in425_simu/maps/my_map.pgm: 401 X 405 map @ 0.05 m/cell
+[map_server-2] [INFO] [1748541438.629519710] [map_server]: Activating
+[map_server-2] [INFO] [1748541438.629730337] [map_server]: Creating bond (map_server) to lifecycle manager.
+[rviz2-3] [INFO] [1748541438.657503034] [rviz2]: Trying to create a map of size 401 x 405 using 1 swatches
+[rviz2-3] [ERROR] [1748541438.691541730] [rviz2]: Vertex Program:rviz/glsl120/indexed_8bit_image.vert Fragment Program:rviz/glsl120/indexed_8bit_image.frag GLSL link result : 
+[rviz2-3] active samplers with a different type refer to the same texture image unit
+[spawn_entity.py-8] [INFO] [1748541438.905082941] [spawn_entity]: Spawn Entity started
+[spawn_entity.py-8] [INFO] [1748541438.905409279] [spawn_entity]: Loading entity published on topic /robot_description
+[spawn_entity.py-8] [INFO] [1748541438.914007225] [spawn_entity]: Waiting for entity xml on /robot_description
+[spawn_entity.py-8] [INFO] [1748541438.923646893] [spawn_entity]: Waiting for service /spawn_entity, timeout = 5
+[spawn_entity.py-8] [INFO] [1748541438.923983106] [spawn_entity]: Waiting for service /spawn_entity
+[spawn_entity.py-8] [INFO] [1748541438.964237799] [spawn_entity]: Calling service /spawn_entity
+[INFO] [ros2-9]: process has finished cleanly [pid 6417]
+[spawn_entity.py-8] [INFO] [1748541439.195935663] [spawn_entity]: Spawn status: SpawnEntity: Successfully spawned entity [robot_ipsa]
+[spawn_entity.py-8] /opt/ros/galactic/lib/python3.8/site-packages/rclpy/qos.py:307: UserWarning: DurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL is deprecated. Use DurabilityPolicy.TRANSIENT_LOCAL instead.
+[spawn_entity.py-8]   warnings.warn(
+[gzserver-5] [INFO] [1748541439.351629823] [object_controller]: Subscribed to [/cmd_vel]
+[gzserver-5] [INFO] [1748541439.354353401] [object_controller]: Advertise odometry on [/odom]
+[gzserver-5] [INFO] [1748541439.357854905] [object_controller]: Publishing odom transforms between [odom] and [base_footprint]
+[INFO] [spawn_entity.py-8]: process has finished cleanly [pid 6415]
+[map_server-2] [INFO] [1748541447.728165302] [map_server]: Handling GetMap request
