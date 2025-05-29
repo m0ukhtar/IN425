@@ -4,7 +4,9 @@ from rclpy.node import Node
 from geometry_msgs.msg import Pose2D, Twist, PoseStamped
 from nav_msgs.msg import Path
 from tf2_ros import Buffer, TransformListener
-from tf2_ros.transform_exception import TransformException
+from tf2_ros.transform_listener import TransformListener
+from tf2_ros.buffer import Buffer
+from tf2_ros import TransformException
 from tf_transformations import euler_from_quaternion
 import math
 
@@ -68,15 +70,16 @@ class Motion(Node):
             angle_to_goal = math.atan2(dy, dx)
             alpha = self.normalize_angle(angle_to_goal - self.robot_pose.theta)
 
-            if rho < 0.2:
+            if rho < 0.3:
                 self.inc += 1
                 return
 
-            # Proportional gains
-            k_rho = 1.0
-            k_alpha = 3.0
+            # Adaptive control to smooth corners and avoid abrupt 90° turns
+            k_rho = 1.2
+            k_alpha = 1.8
 
-            self.linear = k_rho * rho
+            # Reduce angular velocity on large forward movement, increase when close to point
+            self.linear = k_rho * rho * math.exp(-abs(alpha))
             self.angular = k_alpha * alpha
 
             self.send_velocities()
