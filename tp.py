@@ -11,40 +11,32 @@ from tf2_ros.transform_listener import TransformListener
 
 import cv2
 import numpy as np
+import math
 
 class BiRRT(Node):
-    def __init__(self, K=0, dq=0):
+    def __init__(self, K=1000, dq=10):
         Node.__init__(self, "rrt_node")
 
-        """ Attributes """
-        self.robot_pose = Pose2D()  # Current pose of the robot: self.robot.x, self.robot.y, robot.theta(last one is useless)
-        self.path = []  # Path containing the waypoints computed by the Bi-RRT in the image reference frame
+        self.robot_pose = Pose2D()
+        self.path = []
         self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self)  # used to get the position of the robot
-        # TODO: add your attributes here....
-        self.map = None  # OccupancyGrid
-        self.map_image = None  # Image representation of the map
-        self.goal = None  # Goal position in image frame
-        self.K = 1000  # Max iterations for BiRRT
-        self.dq = 10  # Extension distance in pixels
-        
-        """ Publisher and Subscriber """
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+        self.map = None
+        self.map_image = None
+        self.goal = None
+        self.K = K
+        self.dq = dq
+
         self.create_subscription(PoseStamped, "/goal_pose", self.goalCb, 1)
         self.path_pub = self.create_publisher(Path, "/path", 1)
 
-        """ Load the map and create the related image """
         self.getMap()
-        # TODO: create the related image
         self.create_map_image()
 
     def __del__(self):
-        """ Called when the object is destroyed """
-        cv2.destroyAllWindows() # destroy all the OpenCV windows you displayed
+        cv2.destroyAllWindows()
 
-    # **********************************    
     def getMap(self):
-        """ Method for getting the map """
-        # DO NOT TOUCH
         map_cli = self.create_client(GetMap, "map_server/map")
         while not map_cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info("Waiting for map service to be available...")
@@ -55,16 +47,13 @@ class BiRRT(Node):
             rclpy.spin_once(self)
             if future.done():
                 try:
-                    self.map = future.result().map  # OccupancyGrid instance!
+                    self.map = future.result().map
                     self.get_logger().info("Map loaded !")
                 except Exception as e:
                     self.get_logger().info(f"Service call failed {e}")
                 return
 
-    # **********************************
     def get_robot_pose(self):
-        """ Get the current position of the robot """
-        # DO NOT TOUCH
         try:
             trans = self.tf_buffer.lookup_transform(
                 "map",
@@ -76,170 +65,174 @@ class BiRRT(Node):
         except TransformException as e:
             self.get_logger().info(f"Could not transform base_footprint to map: {e}")
 
-    # **********************************
     def create_map_image(self):
-        """ Create an image from the OccupancyGrid """
         if self.map is None:
             self.get_logger().error("Map not loaded! Cannot create map image.")
             return
-        # Log map information for debugging
+
         self.get_logger().info(f"Map dimensions: width={self.map.info.width}, height={self.map.info.height}")
         self.get_logger().info(f"Map resolution: {self.map.info.resolution}")
         self.get_logger().info(f"Map origin: x={self.map.info.origin.position.x}, y={self.map.info.origin.position.y}")
-        # Reshape map data to 2D array
+
         try:
             map_data = np.array(self.map.data, dtype=np.int8).reshape(self.map.info.height, self.map.info.width)
             self.get_logger().info(f"Map data shape: {map_data.shape}, unique values: {np.unique(map_data)}")
         except Exception as e:
             self.get_logger().error(f"Failed to reshape map data: {e}")
             return
-        # Create image: free (0) -> 255 (white), occupied (100) -> 0 (black), unknown (-1) -> 128 (gray)
+
         self.map_image = np.zeros((self.map.info.height, self.map.info.width), dtype=np.uint8)
-        self.map_image[map_data == 0] = 255  # Free
-        self.map_image[map_data == 100] = 0  # Occupied
-        self.map_image[map_data == -1] = 128  # Unknown
-        # Log image statistics
-        self.get_logger().info(f"Map image shape: {self.map_image.shape}, unique values: {np.unique(self.map_image)}")
-        # Log the count of each value in the image for better debugging
+        self.map_image[map_data == 0] = 255
+        self.map_image[map_data == 100] = 0
+        self.map_image[map_data == -1] = 128
+
         unique, counts = np.unique(self.map_image, return_counts=True)
         value_counts = dict(zip(unique, counts))
         self.get_logger().info(f"Map image value counts: {value_counts}")
-        # Save image for debugging
+
         try:
             cv2.imwrite("/tmp/map_image.png", self.map_image)
             self.get_logger().info("Map image saved to /tmp/map_image.png")
         except Exception as e:
             self.get_logger().error(f"Failed to save map image: {e}")
-        # Flip the image vertically for correct display
-        self.map_image = np.flipud(self.map_image)
-        # Display the image with a longer wait time
-        cv2.imshow("Map", self.map_image)
-        cv2.waitKey(100)  # Increased to 100ms to ensure display
 
-    # **********************************
+        self.map_image = np.flipud(self.map_image)
+        cv2.imshow("Map", self.map_image)
+        cv2.waitKey(100)
+
     def goalCb(self, msg):
-        """
-        Callback appelé quand l'utilisateur clique sur 2D Nav Goal dans RVIZ.
-        Récupère les coordonnées de la cible (goal) en mètres, puis convertit en pixels.
-        """
-        # 1. Récupération du goal en mètres (dans le repère de la carte)
         x_goal_map = msg.pose.position.x
         y_goal_map = msg.pose.position.y
 
-        # 2. Transformation en coordonnées dans le repère de l’origine de la map
         origin_x = self.map.info.origin.position.x
         origin_y = self.map.info.origin.position.y
         resolution = self.map.info.resolution
-
-        x_goal_origin = x_goal_map - origin_x
-        y_goal_origin = y_goal_map - origin_y
-
-        # 3. Transformation en indices de cellules (pixels) dans l'image
-        x_img = int(x_goal_origin / resolution)
-        y_img = int(y_goal_origin / resolution)
-
-        # 4. Inversion de l'axe Y (coordonnées image)
         height = self.map.info.height
-        y_img = height - y_img  # inversion verticale pour correspondre à l’image OpenCV
 
-        # 5. Stockage du goal sous forme (x, y) en pixels
+        x_img = int((x_goal_map - origin_x) / resolution)
+        y_img = height - int((y_goal_map - origin_y) / resolution)
+
         self.goal = (x_img, y_img)
 
-        # 6. Affichage de debug (optionnel)
         self.get_logger().info(f"[Goal Callback] Goal en map frame: ({x_goal_map:.2f}, {y_goal_map:.2f})")
         self.get_logger().info(f"[Goal Callback] Goal en image: {self.goal}")
+        self.run()
 
-    # **********************************
     def run(self):
-        """
-        Fonction principale appelée périodiquement. Elle :
-        - Récupère la position actuelle du robot.
-        - La convertit en coordonnées image.
-        - Lance l'algorithme BiRRT.
-        - Publie le chemin trouvé.
-        """
-        if self.goal is None:
-            self.get_logger().warn("Aucun goal défini. Cliquez sur 2D Nav Goal dans RVIZ.")
+        if self.goal is None or self.map is None:
             return
 
         try:
-            # 1. Obtenir la position actuelle du robot en map frame
-            now = rclpy.time.Time()
-            transform = self.tf_buffer.lookup_transform(
-                'map', 'base_footprint', now
-            )
+            trans = self.tf_buffer.lookup_transform('map', 'base_footprint', rclpy.time.Time())
+            x_robot = trans.transform.translation.x
+            y_robot = trans.transform.translation.y
 
-            x_robot = transform.transform.translation.x
-            y_robot = transform.transform.translation.y
-
-            # 2. Conversion en coordonnées image (pixels)
             origin_x = self.map.info.origin.position.x
             origin_y = self.map.info.origin.position.y
             resolution = self.map.info.resolution
             height = self.map.info.height
 
-            x_robot_origin = x_robot - origin_x
-            y_robot_origin = y_robot - origin_y
-
-            x_img = int(x_robot_origin / resolution)
-            y_img = height - int(y_robot_origin / resolution)  # Inversion Y
+            x_img = int((x_robot - origin_x) / resolution)
+            y_img = height - int((y_robot - origin_y) / resolution)
+            start = (x_img, y_img)
 
             self.get_logger().info(f"[run] Start en map: ({x_robot:.2f}, {y_robot:.2f})")
             self.get_logger().info(f"[run] Start en image: ({x_img}, {y_img})")
 
-            start = (x_img, y_img)
-
-            # 3. Vérifie si le start ou goal est dans un obstacle
-            if self.image[start[1], start[0]] != 255:
+            if self.map_image[start[1], start[0]] != 255:
                 self.get_logger().error("Start position is in an obstacle!")
                 return
-            if self.image[self.goal[1], self.goal[0]] != 255:
+            if self.map_image[self.goal[1], self.goal[0]] != 255:
                 self.get_logger().error("Goal position is in an obstacle!")
                 return
 
-            # 4. Planification avec BiRRT
-            self.get_logger().info("Lancement de BiRRT...")
-            path = self.birrt.run(start=start, goal=self.goal)
-
+            path = self.plan_birrt(start, self.goal)
             if path is None:
                 self.get_logger().warn("Aucun chemin trouvé par BiRRT.")
                 return
 
-            # 5. Réduction du chemin (facultatif si tu l'as codé)
-            if hasattr(self.birrt, 'reduce_path'):
-                path = self.birrt.reduce_path(path)
-
-            # 6. Publier le chemin
-            self.publishPath(path)
+            self.path = path
+            self.publishPath()
 
         except Exception as e:
             self.get_logger().error(f"Erreur dans run(): {str(e)}")
-        
-    # **********************************
+
     def publishPath(self):
-        """ Send the computed path so that RVIZ displays it """
-        """ TODO - Transform the waypoints from pixels coordinates to meters in the map frame """
         msg = Path()
         msg.header.frame_id = "map"
         msg.header.stamp = self.get_clock().now().to_msg()
-        path_rviz = []
-        for pose_img in self.path:
+
+        resolution = self.map.info.resolution
+        origin_x = self.map.info.origin.position.x
+        origin_y = self.map.info.origin.position.y
+        height = self.map.info.height
+
+        for x_img, y_img in self.path:
+            x_map = x_img * resolution + origin_x
+            y_map = (height - y_img) * resolution + origin_y
+
             pose = PoseStamped()
-            # pose.pose.position.x = ...
-            # pose.pose.position.y = ...
-            path_rviz.append(pose)
-        msg.poses = path_rviz
+            pose.header.frame_id = "map"
+            pose.pose.position.x = x_map
+            pose.pose.position.y = y_map
+            pose.pose.orientation.w = 1.0
+
+            msg.poses.append(pose)
+
         self.path_pub.publish(msg)
 
-def main():
-    # DO NOT TOUCH
-    rclpy.init()
+    def plan_birrt(self, start, goal):
+        def is_free(p):
+            x, y = p
+            return 0 <= x < self.map_image.shape[1] and 0 <= y < self.map_image.shape[0] and self.map_image[y, x] == 255
 
+        def steer(p1, p2):
+            dx, dy = p2[0] - p1[0], p2[1] - p1[1]
+            dist = math.hypot(dx, dy)
+            if dist < 1e-6:
+                return p1
+            scale = min(self.dq / dist, 1.0)
+            return (int(p1[0] + dx * scale), int(p1[1] + dy * scale))
+
+        def get_nearest(tree, point):
+            return min(tree, key=lambda p: (p[0] - point[0]) ** 2 + (p[1] - point[1]) ** 2)
+
+        def line_is_free(p1, p2):
+            line = list(zip(np.linspace(p1[0], p2[0], num=10).astype(int), np.linspace(p1[1], p2[1], num=10).astype(int)))
+            return all(is_free(p) for p in line)
+
+        tree_a, tree_b = {start: None}, {goal: None}
+
+        for _ in range(self.K):
+            rand = (np.random.randint(0, self.map_image.shape[1]), np.random.randint(0, self.map_image.shape[0]))
+            nearest_a = get_nearest(tree_a, rand)
+            new_a = steer(nearest_a, rand)
+            if not is_free(new_a) or not line_is_free(nearest_a, new_a):
+                continue
+            tree_a[new_a] = nearest_a
+
+            nearest_b = get_nearest(tree_b, new_a)
+            new_b = steer(nearest_b, new_a)
+            if is_free(new_b) and line_is_free(nearest_b, new_b):
+                tree_b[new_b] = nearest_b
+                if line_is_free(new_a, new_b):
+                    path = [new_a]
+                    while new_a in tree_a:
+                        new_a = tree_a[new_a]
+                        if new_a: path.insert(0, new_a)
+                    while new_b in tree_b:
+                        new_b = tree_b[new_b]
+                        if new_b: path.append(new_b)
+                    return path
+            tree_a, tree_b = tree_b, tree_a
+        return None
+
+def main():
+    rclpy.init()
     node = BiRRT()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
-
     node.destroy_node()
     rclpy.shutdown()
