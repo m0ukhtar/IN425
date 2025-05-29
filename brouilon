@@ -1,13 +1,21 @@
-Cmahamat@mahamat:~$ ros2 run in425_nav rrt_node.py
-[INFO] [1748532402.782161137] [rrt_node]: Map loaded !
-[INFO] [1748532402.782343387] [rrt_node]: Map dimensions: width=401, height=405
-[INFO] [1748532402.782493179] [rrt_node]: Map resolution: 0.05000000074505806
-[INFO] [1748532402.782637637] [rrt_node]: Map origin: x=-10.1, y=-9.89
-[INFO] [1748532402.786642843] [rrt_node]: Map data shape: (405, 401), unique values: [ -1   0 100]
-[INFO] [1748532402.789482509] [rrt_node]: Map image shape: (405, 401), unique values: [  0 128 255]
-[INFO] [1748532402.792152591] [rrt_node]: Map image value counts: {0: 5038, 128: 25170, 255: 132197}
-[INFO] [1748532402.799634837] [rrt_node]: Map image saved to /tmp/map_image.png
-[INFO] [1748532416.643896208] [rrt_node]: [Goal Callback] Goal en map frame: (-8.32, 1.71)
-[INFO] [1748532416.644750541] [rrt_node]: [Goal Callback] Goal en image: (35, 173)
-[INFO] [1748532429.096300566] [rrt_node]: [Goal Callback] Goal en map frame: (-7.63, 5.38)
-[INFO] [1748532429.097058066] [rrt_node]: [Goal Callback] Goal en image: (49, 100)
+ahamat@mahamat:~$ ros2 launch in425_nav navigation_launch.py
+[INFO] [launch]: All log files can be found below /home/mahamat/.ros/log/2025-05-29-17-50-35-525182-mahamat-4755
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [rrt_node.py-1]: process started with pid [4762]
+[INFO] [motion_node.py-2]: process started with pid [4764]
+[motion_node.py-2] Traceback (most recent call last):
+[motion_node.py-2]   File "/home/mahamat/ros2_ws/install/in425_nav/lib/in425_nav/motion_node.py", line 11, in <module>
+[motion_node.py-2]     load_entry_point('in425-nav', 'console_scripts', 'motion_node.py')()
+[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 490, in load_entry_point
+[motion_node.py-2]     return get_distribution(dist).load_entry_point(group, name)
+[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 2854, in load_entry_point
+[motion_node.py-2]     return ep.load()
+[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 2445, in load
+[motion_node.py-2]     return self.resolve()
+[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 2451, in resolve
+[motion_node.py-2]     module = __import__(self.module_name, fromlist=['__name__'], level=0)
+[motion_node.py-2]   File "/home/mahamat/ros2_ws/build/in425_nav/in425_nav/motion_node.py", line 7, in <module>
+[motion_node.py-2]     from tf2_ros.transform_exception import TransformException
+[motion_node.py-2] ModuleNotFoundError: No module named 'tf2_ros.transform_exception'
+[ERROR] [motion_node.py-2]: process has died [pid 4764, exit code 1, cmd '/home/mahamat/ros2_ws/install/in425_nav/lib/in425_nav/motion_node.py --ros-args'].
+[rrt_node.py-1] [INFO] [1748541036.856505092] [rrt_node]: Map loaded !
