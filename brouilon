@@ -1,21 +1,11 @@
-mahamat@mahamat:~$ ros2 launch in425_nav navigation_launch.py
-[INFO] [launch]: All log files can be found below /home/mahamat/.ros/log/2025-05-29-18-48-31-758610-mahamat-14852
+INFO] [launch]: All log files can be found below /home/mahamat/.ros/log/2025-05-29-20-24-18-303568-mahamat-42335
 [INFO] [launch]: Default logging verbosity is set to INFO
-[INFO] [rrt_node.py-1]: process started with pid [14858]
-[INFO] [motion_node.py-2]: process started with pid [14860]
-[rrt_node.py-1] [INFO] [1748544512.313967833] [rrt_node]: Map loaded !
-[motion_node.py-2] Traceback (most recent call last):
-[motion_node.py-2]   File "/home/mahamat/ros2_ws/install/in425_nav/lib/in425_nav/motion_node.py", line 11, in <module>
-[motion_node.py-2]     load_entry_point('in425-nav', 'console_scripts', 'motion_node.py')()
-[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 490, in load_entry_point
-[motion_node.py-2]     return get_distribution(dist).load_entry_point(group, name)
-[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 2854, in load_entry_point
-[motion_node.py-2]     return ep.load()
-[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 2445, in load
-[motion_node.py-2]     return self.resolve()
-[motion_node.py-2]   File "/usr/lib/python3/dist-packages/pkg_resources/__init__.py", line 2451, in resolve
-[motion_node.py-2]     module = __import__(self.module_name, fromlist=['__name__'], level=0)
-[motion_node.py-2]   File "/home/mahamat/ros2_ws/build/in425_nav/in425_nav/motion_node.py", line 7, in <module>
-[motion_node.py-2]     from tf2_ros.transform_exception import TransformException
-[motion_node.py-2] ModuleNotFoundError: No module named 'tf2_ros.transform_exception'
-[ERROR] [motion_node.py-2]: process has died [pid 14860, exit code 1, cmd '/home/mahamat/ros2_ws/install/in425_nav/lib/in425_nav/motion_node.py --ros-args'].
+[INFO] [rrt_node.py-1]: process started with pid [42341]
+[INFO] [motion_node.py-2]: process started with pid [42343]
+[rrt_node.py-1] [INFO] [1748550259.027912860] [rrt_node]: Map loaded !
+[rrt_node.py-1] [ERROR] [1748550428.917196637] [rrt_node]: Start or goal in obstacle!
+[rrt_node.py-1] [ERROR] [1748550440.923529808] [rrt_node]: Start or goal in obstacle!
+[rrt_node.py-1] [ERROR] [1748551005.910039251] [rrt_node]: Start or goal in obstacle!
+^C[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [motion_node.py-2]: process has finished cleanly [pid 42343]
+[INFO] [rrt_node.py-1]: process has finished cleanly [pid 42341]
