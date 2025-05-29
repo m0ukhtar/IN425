@@ -15,7 +15,7 @@ import random
 import math
 
 class BiRRT(Node):
-    def __init__(self, K=2000, dq=5):
+    def __init__(self, K=3000, dq=5):
         super().__init__("rrt_node")
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -27,7 +27,7 @@ class BiRRT(Node):
         self.goal = None
         self.path = []
         self.robot_pose = Pose2D()
-        self.safety_radius = 8
+        self.safety_radius = 6
 
         self.create_subscription(PoseStamped, "/goal_pose", self.goalCb, 1)
         self.path_pub = self.create_publisher(Path, "/path", 1)
@@ -114,10 +114,10 @@ class BiRRT(Node):
         tree_a = {start: None}
         tree_b = {goal: None}
         for _ in range(self.K):
-            if random.random() < 0.2:
-                rand = goal
-            else:
-                rand = (random.randint(0, self.map_image.shape[1] - 1), random.randint(0, self.map_image.shape[0] - 1))
+            rand = goal if random.random() < 0.2 else (
+                random.randint(0, self.map_image.shape[1] - 1),
+                random.randint(0, self.map_image.shape[0] - 1))
+
             nearest = min(tree_a.keys(), key=lambda p: (p[0] - rand[0]) ** 2 + (p[1] - rand[1]) ** 2)
             direction = np.array(rand) - np.array(nearest)
             length = np.linalg.norm(direction)
@@ -138,6 +138,7 @@ class BiRRT(Node):
                 return path_a + path_b[::-1]
 
             tree_a, tree_b = tree_b, tree_a
+
         self.get_logger().warn("No path found!")
         return None
 
