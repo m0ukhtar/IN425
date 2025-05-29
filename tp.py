@@ -4,7 +4,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Pose2D, Twist, PoseStamped
 from nav_msgs.msg import Path
 from tf2_ros import Buffer, TransformListener
-from tf2_ros import TransformException
+from tf2_ros.transform_exception import TransformException
 from tf_transformations import euler_from_quaternion
 import math
 
@@ -14,31 +14,34 @@ class Motion(Node):
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
 
-        self.robot_pose = Pose2D()
+        self.robot_pose = Pose2D()  # DO NOT TOUCH
         self.goal_received, self.reached = False, False
 
         self.create_subscription(Path, "/path", self.plannerCb, 1)
         self.robot_path_pub = self.create_publisher(Path, "/robot_path", qos_profile=1)
         self.vel_pub = self.create_publisher(Twist, "/cmd_vel", 1)
-        self.create_timer(0.1, self.run)
+        self.create_timer(0.1, self.run)  # DO NOT TOUCH
 
     def get_robot_pose(self):
+        # DO NOT TOUCH
         try:
-            trans = self.tf_buffer.lookup_transform(
-                "map",
-                "base_footprint",
-                rclpy.time.Time()
-            )
+            trans = self.tf_buffer.lookup_transform("map", "base_footprint", rclpy.time.Time())
             self.robot_pose.x = trans.transform.translation.x
             self.robot_pose.y = trans.transform.translation.y
-            quat = (trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w)
+            quat = (
+                trans.transform.rotation.x,
+                trans.transform.rotation.y,
+                trans.transform.rotation.z,
+                trans.transform.rotation.w
+            )
             self.robot_pose.theta = euler_from_quaternion(quat)[2]
         except TransformException as e:
             self.get_logger().info(f"Could not transform base_footprint to map: {e}")
 
     def plannerCb(self, msg):
+        # DO NOT TOUCH
         self.reached, self.goal_received = False, True
-        self.path = msg.poses[1:]
+        self.path = msg.poses[1:]  # remove robot's pose
         self.inc = 0
 
         self.real_path_msg = Path()
@@ -65,20 +68,22 @@ class Motion(Node):
             angle_to_goal = math.atan2(dy, dx)
             alpha = self.normalize_angle(angle_to_goal - self.robot_pose.theta)
 
-            if abs(alpha) > 0.3:
-                self.linear = 0.0
-                self.angular = 2.0 * alpha
-            else:
-                self.linear = min(0.5, 0.5 * rho)
-                self.angular = 1.5 * alpha
-
-            if rho < 0.15:
+            if rho < 0.3:  # Augmenter seuil pour améliorer fluidité
                 self.inc += 1
+                return
+
+            # Courbes douces : gains plus faibles
+            k_rho = 0.8
+            k_alpha = 1.5
+
+            self.linear = k_rho * rho
+            self.angular = k_alpha * alpha
 
             self.send_velocities()
             self.publish_path()
 
     def send_velocities(self):
+        # DO NOT TOUCH
         self.linear = self.constrain(self.linear, min=-2.0, max=2.0)
         self.angular = self.constrain(self.angular, min=-3.0, max=3.0)
 
@@ -88,13 +93,11 @@ class Motion(Node):
         self.vel_pub.publish(cmd_vel)
 
     def constrain(self, val, min=-2.0, max=2.0):
-        if val < min:
-            return min
-        elif val > max:
-            return max
-        return val
+        # DO NOT TOUCH
+        return max(min, min(val, max))
 
     def publish_path(self):
+        # DO NOT TOUCH
         pose = PoseStamped()
         pose.pose.position.x = self.robot_pose.x
         pose.pose.position.y = self.robot_pose.y
@@ -109,10 +112,8 @@ class Motion(Node):
             angle += 2.0 * math.pi
         return angle
 
-
 def main():
     rclpy.init()
-
     node = Motion()
     try:
         rclpy.spin(node)
