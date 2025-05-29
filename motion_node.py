@@ -4,7 +4,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import Pose2D, Twist, PoseStamped
 from nav_msgs.msg import Path
 from tf2_ros import Buffer, TransformListener
-from tf2_ros.transform_exception import TransformException
+from tf2_ros import TransformException
 from tf_transformations import euler_from_quaternion
 import math
 
