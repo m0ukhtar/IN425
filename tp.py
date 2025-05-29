@@ -15,7 +15,7 @@ import random
 import math
 
 class BiRRT(Node):
-    def __init__(self, K=1000, dq=10):
+    def __init__(self, K=2000, dq=5):
         super().__init__("rrt_node")
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
@@ -106,6 +106,7 @@ class BiRRT(Node):
         path = self.birrt(start, goal)
         if path:
             path = self.reduce_path(path)
+            path = self.smooth_path(path)
             self.path = path
             self.publishPath()
 
@@ -147,8 +148,7 @@ class BiRRT(Node):
     def reduce_path(self, path):
         if len(path) <= 2:
             return path
-    
-        # Étape 1 : simplification brutale
+
         reduced = [path[0]]
         i = 0
         while i < len(path) - 1:
@@ -159,18 +159,19 @@ class BiRRT(Node):
                 j -= 1
             reduced.append(path[j])
             i = j
-    
-        # Étape 2 : lissage par moyenne glissante
-        smoothed = [reduced[0]]
-        alpha = 0.7  # poids de lissage
-        for i in range(1, len(reduced)-1):
-            x = int(alpha * reduced[i][0] + (1 - alpha) * ((reduced[i-1][0] + reduced[i+1][0]) / 2))
-            y = int(alpha * reduced[i][1] + (1 - alpha) * ((reduced[i-1][1] + reduced[i+1][1]) / 2))
-            smoothed.append((x, y))
-        smoothed.append(reduced[-1])
-    
-        return smoothed
 
+        return reduced
+
+    def smooth_path(self, path):
+        if len(path) < 3:
+            return path
+        smoothed = [path[0]]
+        for i in range(1, len(path) - 1):
+            x = (path[i-1][0] + path[i][0] + path[i+1][0]) // 3
+            y = (path[i-1][1] + path[i][1] + path[i+1][1]) // 3
+            smoothed.append((x, y))
+        smoothed.append(path[-1])
+        return smoothed
 
     def publishPath(self):
         msg = Path()
