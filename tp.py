@@ -114,7 +114,10 @@ class BiRRT(Node):
         tree_a = {start: None}
         tree_b = {goal: None}
         for _ in range(self.K):
-            rand = (random.randint(0, self.map_image.shape[1] - 1), random.randint(0, self.map_image.shape[0] - 1))
+            if random.random() < 0.2:
+                rand = goal
+            else:
+                rand = (random.randint(0, self.map_image.shape[1] - 1), random.randint(0, self.map_image.shape[0] - 1))
             nearest = min(tree_a.keys(), key=lambda p: (p[0] - rand[0]) ** 2 + (p[1] - rand[1]) ** 2)
             direction = np.array(rand) - np.array(nearest)
             length = np.linalg.norm(direction)
@@ -148,7 +151,6 @@ class BiRRT(Node):
     def reduce_path(self, path):
         if len(path) <= 2:
             return path
-
         reduced = [path[0]]
         i = 0
         while i < len(path) - 1:
@@ -159,7 +161,6 @@ class BiRRT(Node):
                 j -= 1
             reduced.append(path[j])
             i = j
-
         return reduced
 
     def smooth_path(self, path):
@@ -167,9 +168,10 @@ class BiRRT(Node):
             return path
         smoothed = [path[0]]
         for i in range(1, len(path) - 1):
-            x = (path[i-1][0] + path[i][0] + path[i+1][0]) // 3
-            y = (path[i-1][1] + path[i][1] + path[i+1][1]) // 3
-            smoothed.append((x, y))
+            p0, p1, p2 = path[i-1], path[i], path[i+1]
+            cx = int((p0[0] + 4*p1[0] + p2[0]) / 6)
+            cy = int((p0[1] + 4*p1[1] + p2[1]) / 6)
+            smoothed.append((cx, cy))
         smoothed.append(path[-1])
         return smoothed
 
