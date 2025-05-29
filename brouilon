@@ -1,4 +1,4 @@
-ahamat@mahamat:~$ ros2 launch in425_nav navigation_launch.py
+hamat@mahamat:~$ ros2 launch in425_nav navigation_launch.py
 [INFO] [launch]: All log files can be found below /home/mahamat/.ros/log/2025-05-29-17-50-35-525182-mahamat-4755
 [INFO] [launch]: Default logging verbosity is set to INFO
 [INFO] [rrt_node.py-1]: process started with pid [4762]
@@ -19,3 +19,6 @@ ahamat@mahamat:~$ ros2 launch in425_nav navigation_launch.py
 [motion_node.py-2] ModuleNotFoundError: No module named 'tf2_ros.transform_exception'
 [ERROR] [motion_node.py-2]: process has died [pid 4764, exit code 1, cmd '/home/mahamat/ros2_ws/install/in425_nav/lib/in425_nav/motion_node.py --ros-args'].
 [rrt_node.py-1] [INFO] [1748541036.856505092] [rrt_node]: Map loaded !
+[rrt_node.py-1] [INFO] [1748541074.346226901] [rrt_node]: Goal set at: (49, 171)
+^C[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [rrt_node.py-1]: process has finished cleanly [pid 4762]
