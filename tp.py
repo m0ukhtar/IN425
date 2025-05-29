@@ -147,7 +147,8 @@ class BiRRT(Node):
     def reduce_path(self, path):
         if len(path) <= 2:
             return path
-
+    
+        # Étape 1 : simplification brutale
         reduced = [path[0]]
         i = 0
         while i < len(path) - 1:
@@ -158,8 +159,18 @@ class BiRRT(Node):
                 j -= 1
             reduced.append(path[j])
             i = j
+    
+        # Étape 2 : lissage par moyenne glissante
+        smoothed = [reduced[0]]
+        alpha = 0.7  # poids de lissage
+        for i in range(1, len(reduced)-1):
+            x = int(alpha * reduced[i][0] + (1 - alpha) * ((reduced[i-1][0] + reduced[i+1][0]) / 2))
+            y = int(alpha * reduced[i][1] + (1 - alpha) * ((reduced[i-1][1] + reduced[i+1][1]) / 2))
+            smoothed.append((x, y))
+        smoothed.append(reduced[-1])
+    
+        return smoothed
 
-        return reduced
 
     def publishPath(self):
         msg = Path()
