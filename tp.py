@@ -29,3 +29,68 @@ def goalCb(self, msg):
     # 6. Affichage de debug (optionnel)
     self.get_logger().info(f"[Goal Callback] Goal en map frame: ({x_goal_map:.2f}, {y_goal_map:.2f})")
     self.get_logger().info(f"[Goal Callback] Goal en image: {self.goal}")
+    
+def run(self):
+    """
+    Fonction principale appelée périodiquement. Elle :
+    - Récupère la position actuelle du robot.
+    - La convertit en coordonnées image.
+    - Lance l'algorithme BiRRT.
+    - Publie le chemin trouvé.
+    """
+    if self.goal is None:
+        self.get_logger().warn("Aucun goal défini. Cliquez sur 2D Nav Goal dans RVIZ.")
+        return
+
+    try:
+        # 1. Obtenir la position actuelle du robot en map frame
+        now = rclpy.time.Time()
+        transform = self.tf_buffer.lookup_transform(
+            'map', 'base_footprint', now
+        )
+
+        x_robot = transform.transform.translation.x
+        y_robot = transform.transform.translation.y
+
+        # 2. Conversion en coordonnées image (pixels)
+        origin_x = self.map.info.origin.position.x
+        origin_y = self.map.info.origin.position.y
+        resolution = self.map.info.resolution
+        height = self.map.info.height
+
+        x_robot_origin = x_robot - origin_x
+        y_robot_origin = y_robot - origin_y
+
+        x_img = int(x_robot_origin / resolution)
+        y_img = height - int(y_robot_origin / resolution)  # Inversion Y
+
+        self.get_logger().info(f"[run] Start en map: ({x_robot:.2f}, {y_robot:.2f})")
+        self.get_logger().info(f"[run] Start en image: ({x_img}, {y_img})")
+
+        start = (x_img, y_img)
+
+        # 3. Vérifie si le start ou goal est dans un obstacle
+        if self.image[start[1], start[0]] != 255:
+            self.get_logger().error("Start position is in an obstacle!")
+            return
+        if self.image[self.goal[1], self.goal[0]] != 255:
+            self.get_logger().error("Goal position is in an obstacle!")
+            return
+
+        # 4. Planification avec BiRRT
+        self.get_logger().info("Lancement de BiRRT...")
+        path = self.birrt.run(start=start, goal=self.goal)
+
+        if path is None:
+            self.get_logger().warn("Aucun chemin trouvé par BiRRT.")
+            return
+
+        # 5. Réduction du chemin (facultatif si tu l'as codé)
+        if hasattr(self.birrt, 'reduce_path'):
+            path = self.birrt.reduce_path(path)
+
+        # 6. Publier le chemin
+        self.publishPath(path)
+
+    except Exception as e:
+        self.get_logger().error(f"Erreur dans run(): {str(e)}")
