@@ -27,7 +27,7 @@ class BiRRT(Node):
         self.goal = None
         self.path = []
         self.robot_pose = Pose2D()
-        self.safety_radius = 8  # Pixels of clearance around robot
+        self.safety_radius = 8
 
         self.create_subscription(PoseStamped, "/goal_pose", self.goalCb, 1)
         self.path_pub = self.create_publisher(Path, "/path", 1)
@@ -105,6 +105,7 @@ class BiRRT(Node):
 
         path = self.birrt(start, goal)
         if path:
+            path = self.reduce_path(path)
             self.path = path
             self.publishPath()
 
@@ -142,6 +143,23 @@ class BiRRT(Node):
             node = tree[node]
             path.append(node)
         return path[::-1]
+
+    def reduce_path(self, path):
+        if len(path) <= 2:
+            return path
+
+        reduced = [path[0]]
+        i = 0
+        while i < len(path) - 1:
+            j = len(path) - 1
+            while j > i + 1:
+                if self.is_valid_segment(path[i], path[j]):
+                    break
+                j -= 1
+            reduced.append(path[j])
+            i = j
+
+        return reduced
 
     def publishPath(self):
         msg = Path()
