@@ -11,21 +11,23 @@ from tf2_ros.transform_listener import TransformListener
 
 import cv2
 import numpy as np
+import random
 import math
 
 class BiRRT(Node):
     def __init__(self, K=1000, dq=10):
-        Node.__init__(self, "rrt_node")
-
-        self.robot_pose = Pose2D()
-        self.path = []
+        super().__init__("rrt_node")
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        self.K = K
+        self.dq = dq
         self.map = None
         self.map_image = None
         self.goal = None
-        self.K = K
-        self.dq = dq
+        self.path = []
+        self.robot_pose = Pose2D()
+        self.safety_radius = 8  # Pixels of clearance around robot
 
         self.create_subscription(PoseStamped, "/goal_pose", self.goalCb, 1)
         self.path_pub = self.create_publisher(Path, "/path", 1)
@@ -39,181 +41,123 @@ class BiRRT(Node):
     def getMap(self):
         map_cli = self.create_client(GetMap, "map_server/map")
         while not map_cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info("Waiting for map service to be available...")
-        map_req = GetMap.Request()
-        future = map_cli.call_async(map_req)
-
+            self.get_logger().info("Waiting for map service...")
+        req = GetMap.Request()
+        future = map_cli.call_async(req)
         while rclpy.ok():
             rclpy.spin_once(self)
             if future.done():
-                try:
-                    self.map = future.result().map
-                    self.get_logger().info("Map loaded !")
-                except Exception as e:
-                    self.get_logger().info(f"Service call failed {e}")
+                self.map = future.result().map
+                self.get_logger().info("Map loaded !")
                 return
 
-    def get_robot_pose(self):
-        try:
-            trans = self.tf_buffer.lookup_transform(
-                "map",
-                "base_footprint",
-                rclpy.time.Time()
-            )
-            self.robot_pose.x = trans.transform.translation.x
-            self.robot_pose.y = trans.transform.translation.y
-        except TransformException as e:
-            self.get_logger().info(f"Could not transform base_footprint to map: {e}")
-
     def create_map_image(self):
-        if self.map is None:
-            self.get_logger().error("Map not loaded! Cannot create map image.")
-            return
-
-        try:
-            map_data = np.array(self.map.data, dtype=np.int8).reshape(self.map.info.height, self.map.info.width)
-        except Exception as e:
-            self.get_logger().error(f"Failed to reshape map data: {e}")
-            return
-
-        self.map_image = np.zeros((self.map.info.height, self.map.info.width), dtype=np.uint8)
-        self.map_image[map_data == 0] = 255
-        self.map_image[map_data == 100] = 0
-        self.map_image[map_data == -1] = 128
-
-        try:
-            cv2.imwrite("/tmp/map_image.png", self.map_image)
-        except Exception as e:
-            self.get_logger().error(f"Failed to save map image: {e}")
-
+        height, width = self.map.info.height, self.map.info.width
+        data = np.array(self.map.data, dtype=np.int8).reshape(height, width)
+        self.map_image = np.zeros((height, width), dtype=np.uint8)
+        self.map_image[data == 0] = 255
+        self.map_image[data == 100] = 0
+        self.map_image[data == -1] = 128
         self.map_image = np.flipud(self.map_image)
-        cv2.imshow("Map", self.map_image)
-        cv2.waitKey(100)
+        cv2.imwrite("/tmp/map_image.png", self.map_image)
+
+    def is_valid_point(self, point):
+        x, y = point
+        h, w = self.map_image.shape
+        for dx in range(-self.safety_radius, self.safety_radius + 1):
+            for dy in range(-self.safety_radius, self.safety_radius + 1):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < w and 0 <= ny < h:
+                    if self.map_image[ny][nx] != 255:
+                        return False
+        return True
+
+    def is_valid_segment(self, p1, p2):
+        x1, y1 = p1
+        x2, y2 = p2
+        dist = int(math.hypot(x2 - x1, y2 - y1))
+        for i in range(dist):
+            t = i / dist
+            x = int(x1 * (1 - t) + x2 * t)
+            y = int(y1 * (1 - t) + y2 * t)
+            if not self.is_valid_point((x, y)):
+                return False
+        return True
 
     def goalCb(self, msg):
-        origin_x = self.map.info.origin.position.x
-        origin_y = self.map.info.origin.position.y
-        resolution = self.map.info.resolution
+        res = self.map.info.resolution
+        origin = self.map.info.origin.position
         height = self.map.info.height
 
-        x = msg.pose.position.x
-        y = msg.pose.position.y
+        x_goal = int((msg.pose.position.x - origin.x) / res)
+        y_goal = height - int((msg.pose.position.y - origin.y) / res)
 
-        x_pixel = int((x - origin_x) / resolution)
-        y_pixel = height - int((y - origin_y) / resolution)
+        trans = self.tf_buffer.lookup_transform("map", "base_footprint", rclpy.time.Time())
+        x_start = int((trans.transform.translation.x - origin.x) / res)
+        y_start = height - int((trans.transform.translation.y - origin.y) / res)
 
-        self.goal = (x_pixel, y_pixel)
-        self.get_logger().info(f"Goal set at: {self.goal}")
-        self.run()
+        start = (x_start, y_start)
+        goal = (x_goal, y_goal)
 
-    def run(self):
-        self.get_robot_pose()
-
-        origin_x = self.map.info.origin.position.x
-        origin_y = self.map.info.origin.position.y
-        resolution = self.map.info.resolution
-        height = self.map.info.height
-
-        x_pixel = int((self.robot_pose.x - origin_x) / resolution)
-        y_pixel = height - int((self.robot_pose.y - origin_y) / resolution)
-
-        start = (x_pixel, y_pixel)
-        goal = self.goal
-
-        if self.map_image[start[1], start[0]] != 255 or self.map_image[goal[1], goal[0]] != 255:
-            self.get_logger().warn("Start or goal in obstacle!")
+        if not self.is_valid_point(start) or not self.is_valid_point(goal):
+            self.get_logger().error("Start or goal in obstacle!")
             return
 
         path = self.birrt(start, goal)
         if path:
-            self.path = self.reduce_path(path)
+            self.path = path
             self.publishPath()
 
     def birrt(self, start, goal):
-        def is_free(p):
-            x, y = p
-            return 0 <= x < self.map_image.shape[1] and 0 <= y < self.map_image.shape[0] and self.map_image[y, x] == 255
-
-        def steer(p1, p2):
-            dx, dy = p2[0] - p1[0], p2[1] - p1[1]
-            dist = math.hypot(dx, dy)
-            if dist < 1e-6:
-                return p1
-            scale = min(self.dq / dist, 1.0)
-            return (int(p1[0] + dx * scale), int(p1[1] + dy * scale))
-
-        def get_nearest(tree, point):
-            return min(tree, key=lambda p: (p[0] - point[0]) ** 2 + (p[1] - point[1]) ** 2)
-
-        def line_free(p1, p2):
-            line = list(zip(np.linspace(p1[0], p2[0], num=10).astype(int), np.linspace(p1[1], p2[1], num=10).astype(int)))
-            return all(is_free(p) for p in line)
-
-        tree_a, tree_b = {start: None}, {goal: None}
-
+        tree_a = {start: None}
+        tree_b = {goal: None}
         for _ in range(self.K):
-            rand = (np.random.randint(0, self.map_image.shape[1]), np.random.randint(0, self.map_image.shape[0]))
-            nearest_a = get_nearest(tree_a, rand)
-            new_a = steer(nearest_a, rand)
-            if not is_free(new_a) or not line_free(nearest_a, new_a):
+            rand = (random.randint(0, self.map_image.shape[1] - 1), random.randint(0, self.map_image.shape[0] - 1))
+            nearest = min(tree_a.keys(), key=lambda p: (p[0] - rand[0]) ** 2 + (p[1] - rand[1]) ** 2)
+            direction = np.array(rand) - np.array(nearest)
+            length = np.linalg.norm(direction)
+            if length == 0:
                 continue
-            tree_a[new_a] = nearest_a
+            direction = (direction / length * self.dq).astype(int)
+            new_point = (nearest[0] + direction[0], nearest[1] + direction[1])
 
-            nearest_b = get_nearest(tree_b, new_a)
-            new_b = steer(nearest_b, new_a)
-            if is_free(new_b) and line_free(nearest_b, new_b):
-                tree_b[new_b] = nearest_b
-                if line_free(new_a, new_b):
-                    path = [new_a]
-                    while new_a in tree_a:
-                        new_a = tree_a[new_a]
-                        if new_a: path.insert(0, new_a)
-                    while new_b in tree_b:
-                        new_b = tree_b[new_b]
-                        if new_b: path.append(new_b)
-                    return path
+            if not self.is_valid_point(new_point) or not self.is_valid_segment(nearest, new_point):
+                continue
+
+            tree_a[new_point] = nearest
+
+            nearest_b = min(tree_b.keys(), key=lambda p: (p[0] - new_point[0]) ** 2 + (p[1] - new_point[1]) ** 2)
+            if self.is_valid_segment(new_point, nearest_b):
+                path_a = self.build_path(tree_a, new_point)
+                path_b = self.build_path(tree_b, nearest_b)
+                return path_a + path_b[::-1]
+
             tree_a, tree_b = tree_b, tree_a
+        self.get_logger().warn("No path found!")
         return None
 
-    def reduce_path(self, path):
-        if not path:
-            return []
-        reduced = [path[0]]
-        i = 0
-        while i < len(path) - 1:
-            j = len(path) - 1
-            while j > i:
-                if self.is_line_free(path[i], path[j]):
-                    reduced.append(path[j])
-                    i = j
-                    break
-                j -= 1
-        return reduced
-
-    def is_line_free(self, p1, p2):
-        line = list(zip(np.linspace(p1[0], p2[0], num=20).astype(int), np.linspace(p1[1], p2[1], num=20).astype(int)))
-        return all(0 <= x < self.map_image.shape[1] and 0 <= y < self.map_image.shape[0] and self.map_image[y, x] == 255 for x, y in line)
+    def build_path(self, tree, node):
+        path = [node]
+        while tree[node] is not None:
+            node = tree[node]
+            path.append(node)
+        return path[::-1]
 
     def publishPath(self):
         msg = Path()
         msg.header.frame_id = "map"
         msg.header.stamp = self.get_clock().now().to_msg()
-        path_rviz = []
 
-        resolution = self.map.info.resolution
-        origin_x = self.map.info.origin.position.x
-        origin_y = self.map.info.origin.position.y
+        res = self.map.info.resolution
+        origin = self.map.info.origin.position
         height = self.map.info.height
 
-        for (x_pixel, y_pixel) in self.path:
+        for x, y in self.path:
             pose = PoseStamped()
             pose.header.frame_id = "map"
-            pose.pose.position.x = x_pixel * resolution + origin_x
-            pose.pose.position.y = (height - y_pixel) * resolution + origin_y
-            pose.pose.orientation.w = 1.0
-            path_rviz.append(pose)
-
-        msg.poses = path_rviz
+            pose.pose.position.x = x * res + origin.x
+            pose.pose.position.y = (height - y) * res + origin.y
+            msg.poses.append(pose)
         self.path_pub.publish(msg)
 
 def main():
