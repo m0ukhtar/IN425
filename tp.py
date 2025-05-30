@@ -68,14 +68,15 @@ class Motion(Node):
             angle_to_goal = math.atan2(dy, dx)
             alpha = self.normalize_angle(angle_to_goal - self.robot_pose.theta)
 
+            # Adaptation douce pour éviter les virages trop serrés
             k_rho = 1.5
-            k_alpha = 2.0
+            k_alpha = 1.2
 
-            if abs(alpha) > 0.4:
-                self.linear = 0.0
-                self.angular = 2.5 * alpha
+            if abs(alpha) > 0.5:
+                self.linear = 0.1
+                self.angular = 2.0 * alpha
             else:
-                self.linear = min(1.2, k_rho * rho)
+                self.linear = min(1.0, k_rho * rho)
                 self.angular = k_alpha * alpha
 
             if rho < 0.2:
@@ -85,8 +86,8 @@ class Motion(Node):
             self.publish_path()
 
     def send_velocities(self):
-        self.linear = self.constrain(self.linear, -2.0, 2.0)
-        self.angular = self.constrain(self.angular, -3.0, 3.0)
+        self.linear = self.constrain(self.linear, -1.5, 1.5)
+        self.angular = self.constrain(self.angular, -2.0, 2.0)
 
         cmd_vel = Twist()
         cmd_vel.linear.x = self.linear
