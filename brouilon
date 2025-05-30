@@ -1,4 +1,4 @@
-mahamat@mahamat:~$ ros2 launch in425_simu simu_for_navigation_launch.py
+at@mahamat:~$ ros2 launch in425_simu simu_for_navigation_launch.py
 [INFO] [launch]: All log files can be found below /home/mahamat/.ros/log/2025-05-30-08-10-16-246832-mahamat-6161
 [INFO] [launch]: Default logging verbosity is set to INFO
 [INFO] [killall-1]: process started with pid [6163]
@@ -19,3 +19,50 @@ mahamat@mahamat:~$ ros2 launch in425_simu simu_for_navigation_launch.py
 [rviz2-3] [INFO] [1748592617.550331322] [rviz2]: Stereo is NOT SUPPORTED
 [rviz2-3] [INFO] [1748592617.550390616] [rviz2]: OpenGl version: 3.1 (GLSL 1.4)
 [rviz2-3] [INFO] [1748592617.604034965] [rviz2]: Stereo is NOT SUPPORTED
+[INFO] [robot_state_publisher-7]: process started with pid [6296]
+[INFO] [spawn_entity.py-8]: process started with pid [6298]
+[INFO] [ros2-9]: process started with pid [6300]
+[robot_state_publisher-7] Link base_link had 4 children
+[robot_state_publisher-7] Link front_wheel had 0 children
+[robot_state_publisher-7] Link left_wheel had 0 children
+[robot_state_publisher-7] Link lidar_link had 0 children
+[robot_state_publisher-7] Link right_wheel had 0 children
+[robot_state_publisher-7] [INFO] [1748592621.617900416] [robot_state_publisher]: got segment base_footprint
+[robot_state_publisher-7] [INFO] [1748592621.620220007] [robot_state_publisher]: got segment base_link
+[robot_state_publisher-7] [INFO] [1748592621.623418590] [robot_state_publisher]: got segment front_wheel
+[robot_state_publisher-7] [INFO] [1748592621.623830732] [robot_state_publisher]: got segment left_wheel
+[robot_state_publisher-7] [INFO] [1748592621.624015239] [robot_state_publisher]: got segment lidar_link
+[robot_state_publisher-7] [INFO] [1748592621.624147327] [robot_state_publisher]: got segment right_wheel
+[map_server-2] [INFO] [1748592621.797951929] [map_server]: Configuring
+[map_server-2] [INFO] [map_io]: Loading yaml file: /home/mahamat/ros2_ws/install/in425_simu/share/in425_simu/maps/my_map.yaml
+[map_server-2] [DEBUG] [map_io]: resolution: 0.05
+[map_server-2] [DEBUG] [map_io]: origin[0]: -10.1
+[map_server-2] [DEBUG] [map_io]: origin[1]: -9.89
+[map_server-2] [DEBUG] [map_io]: origin[2]: 0
+[map_server-2] [DEBUG] [map_io]: free_thresh: 0.196
+[map_server-2] [DEBUG] [map_io]: occupied_thresh: 0.65
+[map_server-2] [DEBUG] [map_io]: mode: trinary
+[map_server-2] [DEBUG] [map_io]: negate: 0
+[map_server-2] [INFO] [map_io]: Loading image_file: /home/mahamat/ros2_ws/install/in425_simu/share/in425_simu/maps/my_map.pgm
+[map_server-2] [DEBUG] [map_io]: Read map /home/mahamat/ros2_ws/install/in425_simu/share/in425_simu/maps/my_map.pgm: 401 X 405 map @ 0.05 m/cell
+[map_server-2] [INFO] [1748592621.837429476] [map_server]: Activating
+[map_server-2] [INFO] [1748592621.838135837] [map_server]: Creating bond (map_server) to lifecycle manager.
+[rviz2-3] [INFO] [1748592621.857858235] [rviz2]: Trying to create a map of size 401 x 405 using 1 swatches
+[rviz2-3] [ERROR] [1748592621.891526305] [rviz2]: Vertex Program:rviz/glsl120/indexed_8bit_image.vert Fragment Program:rviz/glsl120/indexed_8bit_image.frag GLSL link result : 
+[rviz2-3] active samplers with a different type refer to the same texture image unit
+[INFO] [ros2-9]: process has finished cleanly [pid 6300]
+[spawn_entity.py-8] [INFO] [1748592622.193852946] [spawn_entity]: Spawn Entity started
+[spawn_entity.py-8] [INFO] [1748592622.194103372] [spawn_entity]: Loading entity published on topic /robot_description
+[spawn_entity.py-8] [INFO] [1748592622.202121645] [spawn_entity]: Waiting for entity xml on /robot_description
+[spawn_entity.py-8] [INFO] [1748592622.213369253] [spawn_entity]: Waiting for service /spawn_entity, timeout = 5
+[spawn_entity.py-8] [INFO] [1748592622.213547468] [spawn_entity]: Waiting for service /spawn_entity
+[spawn_entity.py-8] [INFO] [1748592622.241450645] [spawn_entity]: Calling service /spawn_entity
+[spawn_entity.py-8] [INFO] [1748592622.477726782] [spawn_entity]: Spawn status: SpawnEntity: Successfully spawned entity [robot_ipsa]
+[spawn_entity.py-8] /opt/ros/galactic/lib/python3.8/site-packages/rclpy/qos.py:307: UserWarning: DurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL is deprecated. Use DurabilityPolicy.TRANSIENT_LOCAL instead.
+[spawn_entity.py-8]   warnings.warn(
+[gzserver-5] [INFO] [1748592622.599495389] [object_controller]: Subscribed to [/cmd_vel]
+[gzserver-5] [INFO] [1748592622.600705603] [object_controller]: Advertise odometry on [/odom]
+[gzserver-5] [INFO] [1748592622.601905400] [object_controller]: Publishing odom transforms between [odom] and [base_footprint]
+[INFO] [spawn_entity.py-8]: process has finished cleanly [pid 6298]
+[map_server-2] [INFO] [1748592685.106067822] [map_server]: Handling GetMap request
+[rviz2-3] [INFO] [1748592688.508613866] [rviz2]: Setting estimate pose: Frame:map, Position(7.75138, -5.13447, 0), Orientation(0, 0, 0.705663, 0.708547) = Angle: 1.56672
