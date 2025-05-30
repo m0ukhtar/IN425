@@ -1,3 +1,21 @@
-[INFO] [motion_node.py-2]: process started with pid [4492]
-[rrt_node.py-1] [INFO] [1748591782.257664502] [rrt_node]: Map loaded !
-[rrt_node.py-1] [ERROR] [1748591814.236807153] [rrt_node]: Start or goal in obstacle!
+mahamat@mahamat:~$ ros2 launch in425_simu simu_for_navigation_launch.py
+[INFO] [launch]: All log files can be found below /home/mahamat/.ros/log/2025-05-30-08-10-16-246832-mahamat-6161
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [killall-1]: process started with pid [6163]
+[INFO] [map_server-2]: process started with pid [6165]
+[INFO] [rviz2-3]: process started with pid [6167]
+[INFO] [static_transform_publisher-4]: process started with pid [6169]
+[ERROR] [killall-1]: process has died [pid 6163, exit code 1, cmd 'killall gzserver gzclient'].
+[killall-1] gzserver: no process found
+[killall-1] gzclient: no process found
+[static_transform_publisher-4] [INFO] [1748592616.502776851] [static_transform_publisher_iy3uywC4WQzmffJ0]: Spinning until killed publishing transform from 'map' to 'odom'
+[map_server-2] [INFO] [1748592616.525421653] [map_server]: 
+[map_server-2] 	map_server lifecycle node launched. 
+[map_server-2] 	Waiting on external lifecycle transitions to activate
+[map_server-2] 	See https://design.ros2.org/articles/node_lifecycle.html for more information.
+[map_server-2] [INFO] [1748592616.525486822] [map_server]: Creating
+[INFO] [gzserver-5]: process started with pid [6204]
+[INFO] [gzclient   -6]: process started with pid [6206]
+[rviz2-3] [INFO] [1748592617.550331322] [rviz2]: Stereo is NOT SUPPORTED
+[rviz2-3] [INFO] [1748592617.550390616] [rviz2]: OpenGl version: 3.1 (GLSL 1.4)
+[rviz2-3] [INFO] [1748592617.604034965] [rviz2]: Stereo is NOT SUPPORTED
