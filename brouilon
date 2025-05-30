@@ -8,26 +8,48 @@ def run(self):
             self.send_velocities()
             return
 
-        current_goal = self.path[self.inc].pose.position
+        # Paramètres pour Pure Pursuit
+        look_ahead_distance = 0.5  # Distance d'anticipation (en mètres)
 
+        # Trouver le point cible à la distance d'anticipation
+        current_goal = None
+        for i in range(self.inc, len(self.path)):
+            goal_pos = self.path[i].pose.position
+            dx = goal_pos.x - self.robot_pose.x
+            dy = goal_pos.y - self.robot_pose.y
+            rho = math.sqrt(dx ** 2 + dy ** 2)
+
+            # Si le point est à une distance supérieure ou égale à la look-ahead distance, l'utiliser
+            if rho >= look_ahead_distance:
+                current_goal = goal_pos
+                break
+
+        # Si aucun point n'est trouvé (on est près de la fin du chemin), utiliser le dernier point
+        if current_goal is None:
+            current_goal = self.path[-1].pose.position
+            self.inc = len(self.path) - 1  # Assurer qu'on reste sur le dernier point
+
+        # Calcul de l'angle vers le point cible
         dx = current_goal.x - self.robot_pose.x
         dy = current_goal.y - self.robot_pose.y
-
         rho = math.sqrt(dx ** 2 + dy ** 2)
         angle_to_goal = math.atan2(dy, dx)
         alpha = self.normalize_angle(angle_to_goal - self.robot_pose.theta)
 
-        k_rho = 0.8   # Réduit pour moins d'agressivité
-        k_alpha = 1.5 # Augmenté pour une correction plus rapide
+        # Gains ajustés pour un suivi fluide
+        k_rho = 0.8   # Vitesse linéaire proportionnelle à la distance
+        k_alpha = 1.5 # Vitesse angulaire proportionnelle à l'angle
 
-        if abs(alpha) > 0.1:  # Seuil réduit pour plus de fluidité
-            self.linear = min(0.3, k_rho * rho)  # Mouvement linéaire réduit
-            self.angular = 2.0 * alpha
-        else:
-            self.linear = min(1.0, k_rho * rho)
-            self.angular = k_alpha * alpha
+        # Calcul des vitesses linéaire et angulaire
+        self.linear = min(0.8, k_rho * rho)  # Limiter la vitesse linéaire pour plus de contrôle
+        self.angular = k_alpha * alpha       # Correction angulaire proportionnelle
 
-        if rho < 0.15:
+        # Si on est très proche du point courant, passer au suivant
+        current_point = self.path[self.inc].pose.position
+        dx_current = current_point.x - self.robot_pose.x
+        dy_current = current_point.y - self.robot_pose.y
+        rho_current = math.sqrt(dx_current ** 2 + dy_current ** 2)
+        if rho_current < 0.15:
             self.inc += 1
 
         self.send_velocities()
