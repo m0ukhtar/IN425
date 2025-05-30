@@ -24,7 +24,7 @@ class Motion(Node):
         self.create_subscription(Path, "/path", self.plannerCb, 1)
         self.robot_path_pub = self.create_publisher(Path, "/robot_path", qos_profile=1)
         self.vel_pub = self.create_publisher(Twist, "/cmd_vel", 1)
-        self.create_timer(0.1, self.run)
+        self.create_timer(ව:0.1, self.run)
 
         self.get_logger().info("Motion node initialized successfully")
 
@@ -65,17 +65,16 @@ class Motion(Node):
                 self.send_velocities()
                 return
 
-            # Initial alignment at the start of the path
+            # Stricter initial alignment at the start of the path
             if not self.initial_alignment_done and self.inc == 0:
-                # Calculate the direction to the first point
                 first_point = self.path[0].pose.position
                 dx = first_point.x - self.robot_pose.x
                 dy = first_point.y - self.robot_pose.y
                 desired_angle = math.atan2(dy, dx)
                 alpha = self.normalize_angle(desired_angle - self.robot_pose.theta)
 
-                # If the robot is not aligned (within 0.1 radians), turn in place
-                if abs(alpha) > 0.1:
+                # Tighter alignment threshold
+                if abs(alpha) > 0.05:  # Reduced from 0.1 to 0.05 for stricter alignment
                     self.linear = 0.0
                     self.angular = 2.0 * alpha  # Turn in place to align
                     self.send_velocities()
@@ -84,8 +83,8 @@ class Motion(Node):
                 else:
                     self.initial_alignment_done = True
 
-            # Calculer une distance d'anticipation dynamique basée sur la vitesse et la courbure
-            base_look_ahead_distance = 0.5
+            # Use a smaller look-ahead distance at the start to follow the initial curve
+            base_look_ahead_distance = 0.3 if self.inc < 3 else 0.5  # Smaller at the start
             look_ahead_distance = base_look_ahead_distance * max(0.5, min(1.0, abs(self.linear) / 0.8))
 
             # Estimer la courbure locale (angle entre les points successifs)
@@ -100,7 +99,6 @@ class Motion(Node):
                 angle1 = math.atan2(dy1, dx1)
                 angle2 = math.atan2(dy2, dx2)
                 curvature = abs(self.normalize_angle(angle2 - angle1))
-                # More aggressive reduction in tight corners
                 look_ahead_distance *= max(0.2, 1.0 - 1.5 * curvature / math.pi)
 
             # Trouver le point cible à la distance d'anticipation
@@ -127,11 +125,11 @@ class Motion(Node):
             alpha = self.normalize_angle(angle_to_goal - self.robot_pose.theta)
 
             # Gains adaptatifs basés sur la courbure
-            k_rho = 0.8 * max(0.4, 1.0 - 1.5 * curvature / math.pi)  # More aggressive speed reduction
-            k_alpha = 1.5 + (curvature / math.pi) * 1.5  # Increased angular gain in tight corners
+            k_rho = 0.8 * max(0.4, 1.0 - 1.5 * curvature / math.pi)
+            k_alpha = 1.5 + (curvature / math.pi) * 1.5
 
-            # Calcul des vitesses linéaire et angulaire
-            max_linear_speed = 0.6 if curvature > 0.5 else 0.8  # Reduce max speed in tight corners
+            # Reduce speed at the start for better control
+            max_linear_speed = 0.4 if self.inc < 3 else (0.6 if curvature > 0.5 else 0.8)
             self.linear = min(max_linear_speed, k_rho * rho)
             self.angular = k_alpha * alpha
 
@@ -140,7 +138,7 @@ class Motion(Node):
             dx_current = current_point.x - self.robot_pose.x
             dy_current = current_point.y - self.robot_pose.y
             rho_current = math.sqrt(dx_current ** 2 + dy_current ** 2)
-            transition_threshold = 0.1 * max(0.4, 1.0 - 1.5 * curvature / math.pi)  # Finer threshold
+            transition_threshold = 0.1 * max(0.4, 1.0 - 1.5 * curvature / math.pi)
             if rho_current < transition_threshold:
                 self.inc += 1
 
