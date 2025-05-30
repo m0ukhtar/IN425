@@ -1,19 +1,210 @@
-def smooth_path(self, path, iterations=5):  # Increased iterations from 3 to 5
-    # Chaikin's algorithm for curve smoothing
-    for _ in range(iterations):
-        new_path = [path[0]]
-        for i in range(len(path) - 1):
-            p0 = np.array(path[i])
-            p1 = np.array(path[i + 1])
-            Q = 0.75 * p0 + 0.25 * p1
-            R = 0.25 * p0 + 0.75 * p1
-            new_path.append(tuple(Q.astype(int)))
-            new_path.append(tuple(R.astype(int)))
-        new_path.append(path[-1])
-        path = new_path
-    # Supprime les points trop proches pour éviter le sur-échantillonnage
-    filtered = [path[0]]
-    for p in path[1:]:
-        if np.linalg.norm(np.array(p) - np.array(filtered[-1])) > 1:  # Reduced from 2 to 1 for denser points
-            filtered.append(p)
-    return filtered
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Pose2D, Twist, PoseStamped
+from nav_msgs.msg import Path
+from tf2_ros import Buffer, TransformListener
+from tf2_ros import TransformException
+from tf_transformations import euler_from_quaternion
+import math
+
+class Motion(Node):
+    def __init__(self):
+        super().__init__("motion_node")
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        self.robot_pose = Pose2D()
+        self.goal_received, self.reached = False, False
+        self.linear = 0.0  # Initialize linear velocity
+        self.angular = 0.0  # Initialize angular velocity
+        self.inc = 0  # Initialize inc
+        self.path = []  # Initialize path
+        self.initial_alignment_done = False  # Flag for initial alignment
+
+        self.create_subscription(Path, "/path", self.plannerCb, 1)
+        self.robot_path_pub = self.create_publisher(Path, "/robot_path", qos_profile=1)
+        self.vel_pub = self.create_publisher(Twist, "/cmd_vel", 1)
+        self.create_timer(0.1, self.run)
+
+        self.get_logger().info("Motion node initialized successfully")
+
+    def get_robot_pose(self):
+        try:
+            trans = self.tf_buffer.lookup_transform(
+                "map",
+                "base_footprint",
+                rclpy.time.Time()
+            )
+            self.robot_pose.x = trans.transform.translation.x
+            self.robot_pose.y = trans.transform.translation.y
+            quat = (trans.transform.rotation.x, trans.transform.rotation.y, trans.transform.rotation.z, trans.transform.rotation.w)
+            self.robot_pose.theta = euler_from_quaternion(quat)[2]
+        except TransformException as e:
+            self.get_logger().info(f"Could not transform base_footprint to map: {e}")
+
+    def plannerCb(self, msg):
+        self.reached, self.goal_received = False, True
+        self.path = msg.poses[1:]
+        self.inc = 0
+        self.initial_alignment_done = False  # Reset alignment flag
+
+        self.real_path_msg = Path()
+        self.real_path_msg.header.frame_id = "map"
+        self.real_path_msg.header.stamp = self.get_clock().now().to_msg()
+        self.real_path = []
+        self.get_logger().info(f"Path received with {len(self.path)} points")
+
+    def run(self):
+        if not self.reached and self.goal_received:
+            self.get_logger().info(f"Running with linear: {self.linear}, inc: {self.inc}")
+            self.get_robot_pose()
+            if self.inc >= len(self.path):
+                self.reached = True
+                self.linear = 0.0
+                self.angular = 0.0
+                self.send_velocities()
+                return
+
+            # Stricter initial alignment at the start of the path
+            if not self.initial_alignment_done and self.inc == 0:
+                # Align with the direction of the first segment (from first to second point)
+                if len(self.path) > 1:
+                    first_point = self.path[0].pose.position
+                    second_point = self.path[1].pose.position
+                    dx = second_point.x - first_point.x
+                    dy = second_point.y - first_point.y
+                else:
+                    first_point = self.path[0].pose.position
+                    dx = first_point.x - self.robot_pose.x
+                    dy = first_point.y - self.robot_pose.y
+
+                desired_angle = math.atan2(dy, dx)
+                alpha = self.normalize_angle(desired_angle - self.robot_pose.theta)
+
+                # Tighter alignment threshold
+                if abs(alpha) > 0.02:  # Reduced from 0.05 to 0.02 for stricter alignment
+                    self.linear = 0.0
+                    self.angular = 2.0 * alpha  # Turn in place to align
+                    self.send_velocities()
+                    self.publish_path()
+                    return
+                else:
+                    self.initial_alignment_done = True
+
+            # Smaller and more gradual look-ahead distance at the start
+            if self.inc < 5:
+                base_look_ahead_distance = 0.2 + 0.06 * self.inc  # Gradual increase: 0.2 to 0.44
+            else:
+                base_look_ahead_distance = 0.5
+
+            look_ahead_distance = base_look_ahead_distance * max(0.5, min(1.0, abs(self.linear) / 0.8))
+
+            # Estimer la courbure locale (angle entre les points successifs)
+            curvature = 0.0
+            if self.inc < len(self.path) - 1:
+                current_point = self.path[self.inc].pose.position
+                next_point = self.path[self.inc + 1].pose.position
+                dx1 = current_point.x - self.robot_pose.x
+                dy1 = current_point.y - self.robot_pose.y
+                dx2 = next_point.x - current_point.x
+                dy2 = next_point.y - current_point.y
+                angle1 = math.atan2(dy1, dx1)
+                angle2 = math.atan2(dy2, dx2)
+                curvature = abs(self.normalize_angle(angle2 - angle1))
+                look_ahead_distance *= max(0.2, 1.0 - 1.5 * curvature / math.pi)
+
+            # Trouver le point cible à la distance d'anticipation
+            current_goal = None
+            for i in range(self.inc, len(self.path)):
+                goal_pos = self.path[i].pose.position
+                dx = goal_pos.x - self.robot_pose.x
+                dy = goal_pos.y - self.robot_pose.y
+                rho = math.sqrt(dx ** 2 + dy ** 2)
+
+                if rho >= look_ahead_distance:
+                    current_goal = goal_pos
+                    break
+
+            if current_goal is None:
+                current_goal = self.path[-1].pose.position
+                self.inc = len(self.path) - 1
+
+            # Calcul de l'angle vers le point cible
+            dx = current_goal.x - self.robot_pose.x
+            dy = current_goal.y - self.robot_pose.y
+            rho = math.sqrt(dx ** 2 + dy ** 2)
+            angle_to_goal = math.atan2(dy, dx)
+            alpha = self.normalize_angle(angle_to_goal - self.robot_pose.theta)
+
+            # Continuous orientation adjustment based on the current segment
+            if self.inc < len(self.path) - 1:
+                segment_dx = next_point.x - current_point.x
+                segment_dy = next_point.y - current_point.y
+                segment_angle = math.atan2(segment_dy, segment_dx)
+                segment_alpha = self.normalize_angle(segment_angle - self.robot_pose.theta)
+                alpha = 0.7 * alpha + 0.3 * segment_alpha  # Blend look-ahead and segment direction
+
+            # Gains adaptatifs basés sur la courbure
+            k_rho = 0.8 * max(0.4, 1.0 - 1.5 * curvature / math.pi)
+            k_alpha = 1.5 + (curvature / math.pi) * 1.5
+
+            # Reduce speed at the start for better control
+            max_linear_speed = 0.3 if self.inc < 5 else (0.6 if curvature > 0.5 else 0.8)
+            self.linear = min(max_linear_speed, k_rho * rho)
+            self.angular = k_alpha * alpha
+
+            # Ajuster le seuil de transition en fonction de la courbure
+            current_point = self.path[self.inc].pose.position
+            dx_current = current_point.x - self.robot_pose.x
+            dy_current = current_point.y - self.robot_pose.y
+            rho_current = math.sqrt(dx_current ** 2 + dy_current ** 2)
+            transition_threshold = 0.1 * max(0.4, 1.0 - 1.5 * curvature / math.pi)
+            if rho_current < transition_threshold:
+                self.inc += 1
+
+            self.send_velocities()
+            self.publish_path()
+
+    def send_velocities(self):
+        self.linear = self.constrain(self.linear, min=-1.0, max=1.0)
+        self.angular = self.constrain(self.angular, min=-1.5, max=1.5)
+
+        cmd_vel = Twist()
+        cmd_vel.linear.x = self.linear
+        cmd_vel.angular.z = self.angular
+        self.vel_pub.publish(cmd_vel)
+
+    def constrain(self, val, min=-2.0, max=2.0):
+        if val < min:
+            return min
+        elif val > max:
+            return max
+        return val
+
+    def publish_path(self):
+        pose = PoseStamped()
+        pose.pose.position.x = self.robot_pose.x
+        pose.pose.position.y = self.robot_pose.y
+        self.real_path.append(pose)
+        self.real_path_msg.poses = self.real_path
+        self.robot_path_pub.publish(self.real_path_msg)
+
+    def normalize_angle(self, angle):
+        while angle > math.pi:
+            angle -= 2.0 * math.pi
+        while angle < -math.pi:
+            angle += 2.0 * math.pi
+        return angle
+
+def main():
+    rclpy.init()
+    node = Motion()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
