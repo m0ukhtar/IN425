@@ -21,7 +21,7 @@ class Motion(Node):
         self.create_subscription(Path, "/path", self.plannerCb, 1)
         self.robot_path_pub = self.create_publisher(Path, "/robot_path", qos_profile=1)
         self.vel_pub = self.create_publisher(Twist, "/cmd_vel", 1)
-        self.create_timer(0.1, self.run)
+        self.create_timer(0.05, self.run)  # faster update for smoother control
 
     def get_robot_pose(self):
         try:
@@ -68,26 +68,28 @@ class Motion(Node):
             angle_to_goal = math.atan2(dy, dx)
             alpha = self.normalize_angle(angle_to_goal - self.robot_pose.theta)
 
-            # Adaptation douce pour éviter les virages trop serrés
-            k_rho = 1.5
-            k_alpha = 1.2
+            # Smooth adaptation for nice curved paths
+            k_rho = 2.0
+            k_alpha = 1.5
 
-            if abs(alpha) > 0.5:
+            # Approach target more gently to reduce overshoot
+            if abs(alpha) > 0.4:
                 self.linear = 0.1
-                self.angular = 2.0 * alpha
+                self.angular = 2.5 * alpha
             else:
-                self.linear = min(1.0, k_rho * rho)
+                self.linear = min(1.2, k_rho * rho)
                 self.angular = k_alpha * alpha
 
-            if rho < 0.2:
+            # Advance to next waypoint if close
+            if rho < 0.25:
                 self.inc += 1
 
             self.send_velocities()
             self.publish_path()
 
     def send_velocities(self):
-        self.linear = self.constrain(self.linear, -1.5, 1.5)
-        self.angular = self.constrain(self.angular, -2.0, 2.0)
+        self.linear = self.constrain(self.linear, -1.2, 1.2)
+        self.angular = self.constrain(self.angular, -2.5, 2.5)
 
         cmd_vel = Twist()
         cmd_vel.linear.x = self.linear
