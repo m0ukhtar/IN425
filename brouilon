@@ -1,69 +1,212 @@
-ros2 launch in425_simu simu_for_navigation_launch.py
-[INFO] [launch]: All log files can be found below /home/mahamat/.ros/log/2025-05-30-13-58-18-717825-mahamat-10863
-[INFO] [launch]: Default logging verbosity is set to INFO
-[INFO] [killall-1]: process started with pid [10865]
-[INFO] [map_server-2]: process started with pid [10867]
-[INFO] [rviz2-3]: process started with pid [10869]
-[INFO] [static_transform_publisher-4]: process started with pid [10871]
-[killall-1] gzserver: no process found
-[killall-1] gzclient: no process found
-[ERROR] [killall-1]: process has died [pid 10865, exit code 1, cmd 'killall gzserver gzclient'].
-[static_transform_publisher-4] [INFO] [1748613498.972841212] [static_transform_publisher_IddhpNjKpeWNgY5f]: Spinning until killed publishing transform from 'map' to 'odom'
-[map_server-2] [INFO] [1748613499.013993103] [map_server]: 
-[map_server-2] 	map_server lifecycle node launched. 
-[map_server-2] 	Waiting on external lifecycle transitions to activate
-[map_server-2] 	See https://design.ros2.org/articles/node_lifecycle.html for more information.
-[map_server-2] [INFO] [1748613499.014082191] [map_server]: Creating
-[INFO] [gzserver-5]: process started with pid [10905]
-[INFO] [gzclient   -6]: process started with pid [10907]
-[rviz2-3] [INFO] [1748613499.533693045] [rviz2]: Stereo is NOT SUPPORTED
-[rviz2-3] [INFO] [1748613499.533767756] [rviz2]: OpenGl version: 3.1 (GLSL 1.4)
-[rviz2-3] [INFO] [1748613499.567316040] [rviz2]: Stereo is NOT SUPPORTED
-[INFO] [robot_state_publisher-7]: process started with pid [11006]
-[INFO] [spawn_entity.py-8]: process started with pid [11008]
-[INFO] [ros2-9]: process started with pid [11010]
-[robot_state_publisher-7] Link base_link had 4 children
-[robot_state_publisher-7] Link front_wheel had 0 children
-[robot_state_publisher-7] Link left_wheel had 0 children
-[robot_state_publisher-7] Link lidar_link had 0 children
-[robot_state_publisher-7] Link right_wheel had 0 children
-[robot_state_publisher-7] [INFO] [1748613504.022218954] [robot_state_publisher]: got segment base_footprint
-[robot_state_publisher-7] [INFO] [1748613504.022289749] [robot_state_publisher]: got segment base_link
-[robot_state_publisher-7] [INFO] [1748613504.022296291] [robot_state_publisher]: got segment front_wheel
-[robot_state_publisher-7] [INFO] [1748613504.022299499] [robot_state_publisher]: got segment left_wheel
-[robot_state_publisher-7] [INFO] [1748613504.022302541] [robot_state_publisher]: got segment lidar_link
-[robot_state_publisher-7] [INFO] [1748613504.022305500] [robot_state_publisher]: got segment right_wheel
-[map_server-2] [INFO] [1748613504.223322292] [map_server]: Configuring
-[map_server-2] [INFO] [map_io]: Loading yaml file: /home/mahamat/ros2_ws/install/in425_simu/share/in425_simu/maps/my_map.yaml
-[map_server-2] [DEBUG] [map_io]: resolution: 0.05
-[map_server-2] [DEBUG] [map_io]: origin[0]: -10.1
-[map_server-2] [DEBUG] [map_io]: origin[1]: -9.89
-[map_server-2] [DEBUG] [map_io]: origin[2]: 0
-[map_server-2] [DEBUG] [map_io]: free_thresh: 0.196
-[map_server-2] [DEBUG] [map_io]: occupied_thresh: 0.65
-[map_server-2] [DEBUG] [map_io]: mode: trinary
-[map_server-2] [DEBUG] [map_io]: negate: 0
-[map_server-2] [INFO] [map_io]: Loading image_file: /home/mahamat/ros2_ws/install/in425_simu/share/in425_simu/maps/my_map.pgm
-[map_server-2] [DEBUG] [map_io]: Read map /home/mahamat/ros2_ws/install/in425_simu/share/in425_simu/maps/my_map.pgm: 401 X 405 map @ 0.05 m/cell
-[map_server-2] [INFO] [1748613504.241237673] [map_server]: Activating
-[map_server-2] [INFO] [1748613504.242139299] [map_server]: Creating bond (map_server) to lifecycle manager.
-[rviz2-3] [INFO] [1748613504.269045268] [rviz2]: Trying to create a map of size 401 x 405 using 1 swatches
-[rviz2-3] [ERROR] [1748613504.302078232] [rviz2]: Vertex Program:rviz/glsl120/indexed_8bit_image.vert Fragment Program:rviz/glsl120/indexed_8bit_image.frag GLSL link result : 
-[rviz2-3] active samplers with a different type refer to the same texture image unit
-[spawn_entity.py-8] [INFO] [1748613504.305432223] [spawn_entity]: Spawn Entity started
-[spawn_entity.py-8] [INFO] [1748613504.305686943] [spawn_entity]: Loading entity published on topic /robot_description
-[spawn_entity.py-8] [INFO] [1748613504.306881082] [spawn_entity]: Waiting for entity xml on /robot_description
-[spawn_entity.py-8] [INFO] [1748613504.309410784] [spawn_entity]: Waiting for service /spawn_entity, timeout = 5
-[spawn_entity.py-8] [INFO] [1748613504.309722049] [spawn_entity]: Waiting for service /spawn_entity
-[spawn_entity.py-8] [INFO] [1748613504.326728970] [spawn_entity]: Calling service /spawn_entity
-[spawn_entity.py-8] [INFO] [1748613504.437606248] [spawn_entity]: Spawn status: SpawnEntity: Successfully spawned entity [robot_ipsa]
-[spawn_entity.py-8] /opt/ros/galactic/lib/python3.8/site-packages/rclpy/qos.py:307: UserWarning: DurabilityPolicy.RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL is deprecated. Use DurabilityPolicy.TRANSIENT_LOCAL instead.
-[spawn_entity.py-8]   warnings.warn(
-[INFO] [ros2-9]: process has finished cleanly [pid 11010]
-[gzserver-5] [INFO] [1748613504.551508668] [object_controller]: Subscribed to [/cmd_vel]
-[gzserver-5] [INFO] [1748613504.552690265] [object_controller]: Advertise odometry on [/odom]
-[gzserver-5] [INFO] [1748613504.553759440] [object_controller]: Publishing odom transforms between [odom] and [base_footprint]
-[INFO] [spawn_entity.py-8]: process has finished cleanly [pid 11008]
-[rviz2-3] [INFO] [1748613553.944893289] [rviz2]: Setting goal pose: Frame:map, Position(-4.70509, -1.83025, 0), Orientation(0, 0, -0.956742, 0.290938) = Angle: -2.55118
+import rclpy
+from rclpy.node import Node
 
+from nav_msgs.srv import GetMap
+from nav_msgs.msg import Path
+from geometry_msgs.msg import PoseStamped, Pose2D
 
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+
+import cv2
+import numpy as np
+import random
+import math
+
+class BiRRT(Node):
+    def __init__(self, K=3000, dq=5):
+        super().__init__("rrt_node")
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+
+        self.K = K
+        self.dq = dq
+        self.map = None
+        self.map_image = None
+        self.goal = None
+        self.path = []
+        self.robot_pose = Pose2D()
+        self.safety_radius = 12
+
+        self.create_subscription(PoseStamped, "/goal_pose", self.goalCb, 1)
+        self.path_pub = self.create_publisher(Path, "/path", 1)
+
+        self.getMap()
+        self.create_map_image()
+
+    def __del__(self):
+        cv2.destroyAllWindows()
+
+    def getMap(self):
+        map_cli = self.create_client(GetMap, "map_server/map")
+        while not map_cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info("Waiting for map service...")
+        req = GetMap.Request()
+        future = map_cli.call_async(req)
+        while rclpy.ok():
+            rclpy.spin_once(self)
+            if future.done():
+                self.map = future.result().map
+                self.get_logger().info("Map loaded !")
+                return
+
+    def create_map_image(self):
+        height, width = self.map.info.height, self.map.info.width
+        data = np.array(self.map.data, dtype=np.int8).reshape(height, width)
+        self.map_image = np.zeros((height, width), dtype=np.uint8)
+        self.map_image[data == 0] = 255
+        self.map_image[data == 100] = 0
+        self.map_image[data == -1] = 128
+        self.map_image = np.flipud(self.map_image)
+        cv2.imwrite("/tmp/map_image.png", self.map_image)
+
+    def is_valid_point(self, point):
+        x, y = point
+        h, w = self.map_image.shape
+        for dx in range(-self.safety_radius, self.safety_radius + 1):
+            for dy in range(-self.safety_radius, self.safety_radius + 1):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < w and 0 <= ny < h:
+                    if self.map_image[ny][nx] != 255:
+                        return False
+        return True
+
+    def is_valid_segment(self, p1, p2):
+        x1, y1 = p1
+        x2, y2 = p2
+        dist = int(math.hypot(x2 - x1, y2 - y1))
+        for i in range(dist):
+            t = i / dist
+            x = int(x1 * (1 - t) + x2 * t)
+            y = int(y1 * (1 - t) + y2 * t)
+            if not self.is_valid_point((x, y)):
+                return False
+        return True
+
+    def goalCb(self, msg):
+        res = self.map.info.resolution
+        origin = self.map.info.origin.position
+        height = self.map.info.height
+
+        x_goal = int((msg.pose.position.x - origin.x) / res)
+        y_goal = height - int((msg.pose.position.y - origin.y) / res)
+
+        trans = self.tf_buffer.lookup_transform("map", "base_footprint", rclpy.time.Time())
+        x_start = int((trans.transform.translation.x - origin.x) / res)
+        y_start = height - int((trans.transform.translation.y - origin.y) / res)
+
+        start = (x_start, y_start)
+        goal = (x_goal, y_goal)
+
+        if not self.is_valid_point(start) or not self.is_valid_point(goal):
+            self.get_logger().error("Start or goal in obstacle!")
+            return
+
+        path = self.birrt(start, goal)
+        if path:
+            path = self.reduce_path(path)
+            path = self.smooth_path(path)
+            self.path = path
+            self.publishPath()
+
+    def birrt(self, start, goal):
+        tree_a = {start: None}
+        tree_b = {goal: None}
+        for _ in range(self.K):
+            rand = goal if random.random() < 0.2 else (
+                random.randint(0, self.map_image.shape[1] - 1),
+                random.randint(0, self.map_image.shape[0] - 1))
+
+            nearest = min(tree_a.keys(), key=lambda p: (p[0] - rand[0]) ** 2 + (p[1] - rand[1]) ** 2)
+            direction = np.array(rand) - np.array(nearest)
+            length = np.linalg.norm(direction)
+            if length == 0:
+                continue
+            direction = (direction / length * self.dq).astype(int)
+            new_point = (nearest[0] + direction[0], nearest[1] + direction[1])
+
+            if not self.is_valid_point(new_point) or not self.is_valid_segment(nearest, new_point):
+                continue
+
+            tree_a[new_point] = nearest
+
+            nearest_b = min(tree_b.keys(), key=lambda p: (p[0] - new_point[0]) ** 2 + (p[1] - new_point[1]) ** 2)
+            if self.is_valid_segment(new_point, nearest_b):
+                path_a = self.build_path(tree_a, new_point)
+                path_b = self.build_path(tree_b, nearest_b)
+                return path_a + path_b[::-1]
+
+            tree_a, tree_b = tree_b, tree_a
+
+        self.get_logger().warn("No path found!")
+        return None
+
+    def build_path(self, tree, node):
+        path = [node]
+        while tree[node] is not None:
+            node = tree[node]
+            path.append(node)
+        return path[::-1]
+
+    def reduce_path(self, path):
+        if len(path) <= 2:
+            return path
+        reduced = [path[0]]
+        i = 0
+        while i < len(path) - 1:
+            j = len(path) - 1
+            while j > i + 1:
+                if self.is_valid_segment(path[i], path[j]):
+                    break
+                j -= 1
+            reduced.append(path[j])
+            i = j
+        return reduced
+
+    def smooth_path(self, path, iterations=3):
+        # Chaikin's algorithm for curve smoothing
+        for _ in range(iterations):
+            new_path = [path[0]]
+            for i in range(len(path) - 1):
+                p0 = np.array(path[i])
+                p1 = np.array(path[i + 1])
+                Q = 0.75 * p0 + 0.25 * p1
+                R = 0.25 * p0 + 0.75 * p1
+                new_path.append(tuple(Q.astype(int)))
+                new_path.append(tuple(R.astype(int)))
+            new_path.append(path[-1])
+            path = new_path
+        # Supprime les points trop proches pour éviter le sur-échantillonnage
+        filtered = [path[0]]
+        for p in path[1:]:
+            if np.linalg.norm(np.array(p) - np.array(filtered[-1])) > 2:
+                filtered.append(p)
+        return filtered
+
+    def publishPath(self):
+        msg = Path()
+        msg.header.frame_id = "map"
+        msg.header.stamp = self.get_clock().now().to_msg()
+
+        res = self.map.info.resolution
+        origin = self.map.info.origin.position
+        height = self.map.info.height
+
+        for x, y in self.path:
+            pose = PoseStamped()
+            pose.header.frame_id = "map"
+            pose.pose.position.x = x * res + origin.x
+            pose.pose.position.y = (height - y) * res + origin.y
+            msg.poses.append(pose)
+        self.path_pub.publish(msg)
+
+def main():
+    rclpy.init()
+    node = BiRRT()
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    node.destroy_node()
+    rclpy.shutdown()
