@@ -8,8 +8,23 @@ def run(self):
             self.send_velocities()
             return
 
-        # Paramètres pour Pure Pursuit
-        look_ahead_distance = 0.5  # Distance d'anticipation (en mètres)
+        # Calculer une distance d'anticipation dynamique basée sur la vitesse et la courbure
+        base_look_ahead_distance = 0.5
+        look_ahead_distance = base_look_ahead_distance * max(0.5, min(1.0, abs(self.linear) / 0.8))  # Ajustement basé sur la vitesse
+
+        # Estimer la courbure locale (angle entre les points successifs)
+        if self.inc < len(self.path) - 1:
+            current_point = self.path[self.inc].pose.position
+            next_point = self.path[self.inc + 1].pose.position
+            dx1 = current_point.x - self.robot_pose.x
+            dy1 = current_point.y - self.robot_pose.y
+            dx2 = next_point.x - current_point.x
+            dy2 = next_point.y - current_point.y
+            angle1 = math.atan2(dy1, dx1)
+            angle2 = math.atan2(dy2, dx2)
+            curvature = abs(self.normalize_angle(angle2 - angle1))
+            # Réduire la distance d'anticipation si la courbure est élevée
+            look_ahead_distance *= max(0.3, 1.0 - curvature / math.pi)
 
         # Trouver le point cible à la distance d'anticipation
         current_goal = None
@@ -19,15 +34,13 @@ def run(self):
             dy = goal_pos.y - self.robot_pose.y
             rho = math.sqrt(dx ** 2 + dy ** 2)
 
-            # Si le point est à une distance supérieure ou égale à la look-ahead distance, l'utiliser
             if rho >= look_ahead_distance:
                 current_goal = goal_pos
                 break
 
-        # Si aucun point n'est trouvé (on est près de la fin du chemin), utiliser le dernier point
         if current_goal is None:
             current_goal = self.path[-1].pose.position
-            self.inc = len(self.path) - 1  # Assurer qu'on reste sur le dernier point
+            self.inc = len(self.path) - 1
 
         # Calcul de l'angle vers le point cible
         dx = current_goal.x - self.robot_pose.x
@@ -36,20 +49,21 @@ def run(self):
         angle_to_goal = math.atan2(dy, dx)
         alpha = self.normalize_angle(angle_to_goal - self.robot_pose.theta)
 
-        # Gains ajustés pour un suivi fluide
-        k_rho = 0.8   # Vitesse linéaire proportionnelle à la distance
-        k_alpha = 1.5 # Vitesse angulaire proportionnelle à l'angle
+        # Gains adaptatifs basés sur la courbure
+        k_rho = 0.8 * max(0.5, 1.0 - curvature / math.pi)  # Réduire la vitesse linéaire dans les virages
+        k_alpha = 1.5 + (curvature / math.pi) * 1.0       # Augmenter la réactivité angulaire dans les virages
 
         # Calcul des vitesses linéaire et angulaire
-        self.linear = min(0.8, k_rho * rho)  # Limiter la vitesse linéaire pour plus de contrôle
-        self.angular = k_alpha * alpha       # Correction angulaire proportionnelle
+        self.linear = min(0.8, k_rho * rho)  # Vitesse linéaire limitée
+        self.angular = k_alpha * alpha       # Correction angulaire
 
-        # Si on est très proche du point courant, passer au suivant
+        # Ajuster le seuil de transition en fonction de la courbure
         current_point = self.path[self.inc].pose.position
         dx_current = current_point.x - self.robot_pose.x
         dy_current = current_point.y - self.robot_pose.y
         rho_current = math.sqrt(dx_current ** 2 + dy_current ** 2)
-        if rho_current < 0.15:
+        transition_threshold = 0.15 * max(0.5, 1.0 - curvature / math.pi)  # Réduire le seuil dans les virages
+        if rho_current < transition_threshold:
             self.inc += 1
 
         self.send_velocities()
